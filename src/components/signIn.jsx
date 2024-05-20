@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, firestore } from "../firebase";
 import {
@@ -24,28 +24,19 @@ export const SignIn = () => {
   const [userIdError, setUserIdError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [approvedError, setApprovedError] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const navigate = useNavigate();
-  useEffect(() => {
-    const savedUserId = localStorage.getItem("userId");
-    const savedPassword = localStorage.getItem("password");
-    if (savedUserId && savedPassword) {
-      console.log(savedUserId, savedPassword);
-      handleSignIn({ userId: savedUserId, password: savedPassword });
-    }
-  }, []);
-  const handleSignIn = async ({ e, userId, password }) => {
-    if (e) {
-      e.preventDefault();
-    }
-    if (!userId || !password) {
-      return;
-    }
-    console.log(userId, password);
+
+  const handleSignIn = async (e) => {
+    e.preventDefault();
     setUserIdError("");
     setPasswordError("");
+    console.log("핸들사인");
+
+    console.log(userId, password);
+
     try {
       const q = query(
         collection(firestore, "users"),
@@ -57,6 +48,7 @@ export const SignIn = () => {
         return;
       }
       const user = querySnapshot.docs[0].data();
+      console.log(user);
       const { email, approved } = user;
       if (!approved) {
         setApprovedError(true);
@@ -74,14 +66,13 @@ export const SignIn = () => {
         localStorage.removeItem("userId");
         localStorage.removeItem("password");
       }
-
       setUserId("");
       setPassword("");
-      navigate("/home");
     } catch (error) {
       setPasswordError("비밀번호가 틀립니다.");
     }
   };
+
   return (
     <div>
       <Heading>JSBTN</Heading>
@@ -102,7 +93,7 @@ export const SignIn = () => {
       >
         <SignUp isOpen={isOpen} onClose={onClose} />
 
-        <form onSubmit={() => handleSignIn({ userId, password })}>
+        <form onSubmit={handleSignIn}>
           <FormControl id="userId" isRequired isInvalid={userIdError}>
             <FormLabel>아이디</FormLabel>
             <Input
@@ -128,8 +119,10 @@ export const SignIn = () => {
             <Checkbox
               size="lg"
               mt={4}
-              defaultChecked
-              onChange={(e) => setRememberMe(e.target.checked)}
+              isChecked={rememberMe}
+              onChange={(e) => {
+                setRememberMe(e.target.checked);
+              }}
             >
               자동 로그인
             </Checkbox>
