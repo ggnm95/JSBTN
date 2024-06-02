@@ -119,13 +119,13 @@ export const SignUp = ({ isOpen, onClose }) => {
                 <FormErrorMessage>{passwordError}</FormErrorMessage>
               )}
             </FormControl>
-
-            <Button colorScheme="blue" mt={4} type="submit">
-              가입
-            </Button>
           </form>
         </ModalBody>
-        <ModalFooter></ModalFooter>
+        <ModalFooter>
+          <Button colorScheme="blue" mt={4} type="submit">
+            가입
+          </Button>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );

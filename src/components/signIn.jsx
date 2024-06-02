@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, firestore } from "../firebase";
 import {
@@ -25,14 +25,19 @@ export const SignIn = () => {
   const [passwordError, setPasswordError] = useState("");
   const [approvedError, setApprovedError] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-
   const { isOpen, onOpen, onClose } = useDisclosure();
   const navigate = useNavigate();
-
+  useEffect(() => {
+    const savedUserId = localStorage.getItem("userId");
+    const savedPassword = localStorage.getItem("password");
+    setUserId(savedUserId);
+    setPassword(savedPassword);
+  }, []);
   const handleSignIn = async (e) => {
     e.preventDefault();
     setUserIdError("");
     setPasswordError("");
+    setApprovedError("");
     console.log("핸들사인");
 
     console.log(userId, password);
@@ -68,6 +73,7 @@ export const SignIn = () => {
       }
       setUserId("");
       setPassword("");
+      navigate("/home");
     } catch (error) {
       setPasswordError("비밀번호가 틀립니다.");
     }
@@ -82,6 +88,7 @@ export const SignIn = () => {
           권한이 없습니다.관리자에게 문의해주세요.
         </Alert>
       )}
+
       <Box
         maxW="md"
         mx="auto"

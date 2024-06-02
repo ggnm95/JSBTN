@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ChakraProvider,
   Box,
@@ -15,6 +15,9 @@ import {
   Spacer,
   Flex,
   IconButton,
+  Select,
+  useDisclosure,
+  Spinner,
 } from "@chakra-ui/react";
 import {
   AddIcon,
@@ -22,23 +25,66 @@ import {
   EditIcon,
   SettingsIcon,
 } from "@chakra-ui/icons";
+import Setting from "./setting";
+import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
+import { auth, db } from "../firebase";
 
-const EditableInputWithDropdown = () => {
-  const [items, setItems] = useState([]);
-  const inputRef = useRef(null);
+export const HomePage = () => {
+  const [sitesData, setSitesData] = useState({});
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isLoading, setIsLoading] = useState(true);
+  const user = auth.currentUser;
 
   useEffect(() => {
-    // 로컬 스토리지에서 목록 불러오기
-    const savedItems = JSON.parse(localStorage.getItem("sites")) || ["Asda"];
-    setItems(savedItems);
-  }, []);
+    const listenToCollection = () => {
+      const docRef = doc(db, "sitesData", user.uid);
 
-  const handleItemClick = (item) => {
-    inputRef.current.blur(); // 인풋 필드 포커스 해제
-  };
+      // 실시간 리스너 설정
+      const unsubscribe = onSnapshot(
+        docRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setSitesData(data);
+          } else {
+            console.log("No such document❌❌❌");
+          }
+          setIsLoading(false);
+        },
+        (error) => {
+          console.error("Error listening to collection:", error);
+          setIsLoading(false);
+        }
+      );
 
+      return unsubscribe; // 리스너를 중지하기 위한 함수 반환
+    };
+    const unsubcribe = listenToCollection();
+    return () => unsubcribe();
+  }, [user]);
+  if (isLoading) {
+    return (
+      <ChakraProvider>
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          height="100vh"
+        >
+          <Spinner size="xl" />
+        </Box>
+      </ChakraProvider>
+    );
+  }
   return (
     <ChakraProvider>
+      <Setting
+        isOpen={isOpen}
+        onClose={onClose}
+        sitesData={sitesData}
+        setSitesData={setSitesData}
+        user={user}
+      />
       <Box
         maxW="md"
         mx="auto"
@@ -50,41 +96,23 @@ const EditableInputWithDropdown = () => {
       >
         <FormControl>
           <FormLabel>사이트 선택</FormLabel>
-          <Menu>
-            {({ isOpen }) => (
-              <>
-                <MenuButton
-                  as={Button}
-                  variant="outline"
-                  rightIcon={<ChevronDownIcon />}
-                  onClick={() => inputRef.current.focus()} // 버튼 클릭 시 인풋 필드 포커스
-                >
-                  {isOpen ? "Select Item" : "Select Item"}
-                </MenuButton>
-
-                {isOpen && (
-                  <MenuList>
-                    {items.map((item, index) => (
-                      <MenuItem
-                        key={index}
-                        onClick={() => handleItemClick(item)}
-                      >
-                        {item}
-                      </MenuItem>
-                    ))}
-                  </MenuList>
-                )}
-              </>
-            )}
-          </Menu>
+          <Select>
+            {Object.entries(sitesData).map(([key, site], i) => {
+              return (
+                <option key={key} value={site}>
+                  {site.name}
+                </option>
+              );
+            })}
+          </Select>
         </FormControl>
         <Button w="full" colorScheme="blue" size="lg" mt={2}>
           시작
         </Button>
       </Box>
-      <Flex mt={2}>
+      <Flex mx="auto" maxW="md" mt={2}>
         <Spacer />
-        <Button mr={4} leftIcon={<SettingsIcon />}>
+        <Button leftIcon={<SettingsIcon />} onClick={onOpen}>
           설정
         </Button>
       </Flex>
@@ -92,4 +120,4 @@ const EditableInputWithDropdown = () => {
   );
 };
 
-export default EditableInputWithDropdown;
+export default HomePage;
